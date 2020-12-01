@@ -1,10 +1,14 @@
 #include <Arduino.h>
 
+
 // FUNCTION PROTOTYPES
 bool change_direction(bool direction);
 void rotate_motor(long int motor_steps);
 long int calculate_travel_mm(long int ftravel_mm);
 bool read_direction();
+
+
+
 
 //#define INFO 
 // NANO Configuration
@@ -13,12 +17,14 @@ bool read_direction();
 //  int ENA=2; //define Enable Pin
 
 // MEGA 2560 Configuration
-int PUL=36; //define Pulse pin
-int DIR=40; //define Direction pin
-int ENA=38; //define Enable Pin
+int PUL=36;                   //define Pulse pin
+int DIR=40;                   //define Direction pin
+int ENA=38;                   //define Enable Pin
 
 #define LEFT 1
 #define RIGHT 0
+
+
 
 String mcc_version = "2.4";
 String mcc_date = "24/11/2020";
@@ -132,38 +138,34 @@ void run_sequence(int cycles, int positions){
   }
 }
 
-void run_laps(){
-//  long int total_laps = 0;
-//  total_laps = laps * steps_per_revolution * microstepping;
-//  moved to the main cycle and changed run_sequence to include the laps
-  Serial.print("Total Laps Steps: ");         // to be tested.
-  Serial.println(total_laps);
-
-  Serial.print("Laps: ");                   // to be tested.
-  Serial.println(laps);
-
-  Serial.print("Steps/rev: ");              // to be tested.
-  Serial.println(steps_per_revolution);
-
-  Serial.print("MicroStepping: ");          // to be tested.
-  Serial.println(microstepping);
-
-  // change direction
-  change_direction(LEFT);
-
-  // rotate motor
-  rotate_motor(total_laps);              // variables must be long otherwise we cannot do the same number of steps as others
-
+void rotate_motor(long int motor_steps){
+  Serial.println("START");
+  Serial.print("Rotating: ");
+  Serial.print(motor_steps);
+  Serial.println(" steps");
+  
+  long int i=0;
+  
+  digitalWrite(ENA, LOW);
+  for (i=0; i<motor_steps; i++)
+  {
+    digitalWrite(PUL,HIGH);
+    delayMicroseconds(_speed);
+    digitalWrite(PUL,LOW);
+    delayMicroseconds(_speed);
+    Serial.println(i);
+  }
+  //  DEBUG
+  // to avoid the motor outputs to be disconnected immediately after the last step 
+  // is taken and the motor moving. Might need adjustment ...
   delay(1000);
-
-  // change direction
-  change_direction(RIGHT);
-
-  // rotate motor
-  rotate_motor(total_laps);
-
-  Serial.print(laps);
-  Serial.println(" - Laps completed.");
+  //  DEBUG
+  digitalWrite(ENA, HIGH);
+  
+  Serial.print("Rotated: ");
+  Serial.print(i);
+  Serial.println(" steps");
+  Serial.println("STOP");
 }
 
 int input_data(){
@@ -199,33 +201,38 @@ int input_data(){
   return input_value;
 }
 
-void rotate_motor(long int motor_steps){
-  Serial.println("START");
-  Serial.print("Rotating: ");
-  Serial.print(motor_steps);
-  Serial.println(" steps");
-  
-  long int i=0;
-  
-  digitalWrite(ENA, LOW);
-  for (i=0; i<motor_steps; i++)
-  {
-    digitalWrite(PUL,HIGH);
-    delayMicroseconds(_speed);
-    digitalWrite(PUL,LOW);
-    delayMicroseconds(_speed);
-    //Serial.println(i);
-  }
-  //  DEBUG
-  // to avoid the motor outputs to be disconnected immediately after the last step 
-  // is taken and the motor moving. Might need adjustment ...
+void run_laps(){
+//  long int total_laps = 0;
+//  total_laps = laps * steps_per_revolution * microstepping;
+//  moved to the main cycle and changed run_sequence to include the laps
+  Serial.print("Total Laps Steps: ");         // to be tested.
+  Serial.println(total_laps);
+
+  Serial.print("Laps: ");                   // to be tested.
+  Serial.println(laps);
+
+  Serial.print("Steps/rev: ");              // to be tested.
+  Serial.println(steps_per_revolution);
+
+  Serial.print("MicroStepping: ");          // to be tested.
+  Serial.println(microstepping);
+
+  // change direction
+  change_direction(LEFT);
+
+  // rotate motor
+  rotate_motor(total_laps);              // variables must be long otherwise we cannot do the same number of steps as others
+
   delay(1000);
-  //  DEBUG
-  digitalWrite(ENA, HIGH);
-  Serial.print("Rotated: ");
-  Serial.print(i);
-  Serial.println(" steps");
-  Serial.println("STOP");
+
+  // change direction
+  change_direction(RIGHT);
+
+  // rotate motor
+  rotate_motor(total_laps);
+
+  Serial.print(laps);
+  Serial.println(" - Laps completed.");
 }
 
 bool change_direction(bool direction){
@@ -578,4 +585,3 @@ void loop()
       refresh_commands = false;
     }
 }
-
