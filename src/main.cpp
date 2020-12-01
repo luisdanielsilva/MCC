@@ -1,56 +1,3 @@
-// MOTOR CONTROL CENTER
-// DESCRIPTION:
-//  Sketch to move motors back and forth and perform sequences of movements
-//  Versions
-//  02 - added "info" command, added "go to position" command. added a delay 
-//  before disconnecting the motor output stage to avoid the motor drifting steps
-//  03 - added travel in mm to a position.
-//  0.4 - added travel in mm to any position. Calculation of travel in mm to steps
-//  2.2 - missing configuring steps_per_revolution value
-//  2.3 - added configuring steps_per_revolution value
-//  2.4 - added code to support structure definition for motors
-// TODO: 
-//  define pins on the fly
-//  start with ENABLE off
-//  configure if enable is ON=1 or =0
-//  enable manual pin setting
-//  print pins being used at the moment
-
-// FUTURE WORK - https://overiq.com/c-programming-101/pointer-to-a-structure-in-c/
-/* typedef struct
-{
-  const char* name_;
-  int type;                       //0: TRAY, 1: PUMP
-  int id;
-  int PIN_STEP;
-  int PIN_ENABLE;
-  int PIN_DIR;
-  long int stepsPerRevolution;
-  long int max_speed_rpm;
-} MOTOR;
-
-MOTOR motor_tray = {"TRAY", 0, 1, 13, 14, 15, 1600, 200};
-MOTOR motor_pump1 = {"PUMP1", 1, 2, 16, 17, 18, 1200, 100};;
-MOTOR motor_pump2 = {"PUMP2", 1, 2, 19, 20, 21, 1200, 100};;
-MOTOR motor_pump3 = {"PUMP3", 1, 2, 22, 23, 24, 1200, 100};;
-
-MOTOR *ptr_motor_tray = &motor_tray;
-MOTOR *ptr_motor_pump1 = &motor_pump1;
-MOTOR *ptr_motor_pump2 = &motor_pump2;
-MOTOR *ptr_motor_pump3 = &motor_pump3; */
-
-// FUTURE WORK - ***********************************************************************************************************
-  /* Serial.println(" ******************************************* MOTOR INFORMATION *******************************************");
-  Serial.println(motor_tray.id);
-  Serial.println(motor_tray.max_speed_rpm);
-  Serial.println(motor_tray.name_);
-  Serial.println(motor_tray.PIN_DIR);
-  Serial.println(motor_tray.PIN_ENABLE);
-  Serial.println(motor_tray.PIN_STEP);
-  Serial.println(motor_tray.stepsPerRevolution);
-  Serial.println(motor_tray.type); */
-// FUTURE WORK - END *******************************************************************************************************
-
 #include <Arduino.h>
 
 // FUNCTION PROTOTYPES
@@ -192,13 +139,13 @@ void run_laps(){
   Serial.print("Total Laps Steps: ");         // to be tested.
   Serial.println(total_laps);
 
-  Serial.print("Laps: ");         // to be tested.
+  Serial.print("Laps: ");                   // to be tested.
   Serial.println(laps);
 
-  Serial.print("Steps/rev: ");         // to be tested.
+  Serial.print("Steps/rev: ");              // to be tested.
   Serial.println(steps_per_revolution);
 
-  Serial.print("MicroStepping: ");         // to be tested.
+  Serial.print("MicroStepping: ");          // to be tested.
   Serial.println(microstepping);
 
   // change direction
@@ -435,7 +382,7 @@ void setup() {
   pinMode (ENA, OUTPUT);
 
   Serial.begin(115200);
-  // Test Comment 4
+  
   digitalWrite(ENA, HIGH);
 
   menu_print();
