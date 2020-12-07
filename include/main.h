@@ -20,4 +20,10 @@ Inline definitions of functions that require an additional #include, that are su
 functions should have little if any fan out, and if they do have fan out, it should be localized to stuff defined in the header.
  */
 
+// FUNCTION PROTOTYPES
+bool change_direction(bool direction);
+void rotate_motor(unsigned long int motor_steps);
+unsigned long int calculate_travel_mm(long int ftravel_mm);
+bool read_direction();
+
 #endif

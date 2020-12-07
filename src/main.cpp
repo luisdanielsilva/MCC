@@ -4,14 +4,6 @@
 #include "motor.h"
 #include "serial.h"
 
-
-// FUNCTION PROTOTYPES
-bool change_direction(bool direction);
-void rotate_motor(unsigned long int motor_steps);
-unsigned long int calculate_travel_mm(long int ftravel_mm);
-bool read_direction();
-
-
 //#define INFO 
 // NANO Configuration
  int PUL=4; //define Pulse pin
@@ -23,16 +15,13 @@ bool read_direction();
 // int DIR=8;                   //define Direction pin
 // int ENA=10;                   //define Enable Pin
 
-#define LEFT 1
-#define RIGHT 0
 
 String mcc_version = "2.4";
 String mcc_date = "24/11/2020";
 String mcc_coder = "Luis Silva";
 
-int steps_per_revolution = 200;
-int minutes = 60;
-long int input_value = 0;
+
+ long int input_value = 0;
 long int _speed = 0;
 long int temp_speed_rpm = 0;
 long int speed_rpm = 0;
@@ -40,19 +29,11 @@ long int steps = 0;
 int cycles = 0;
 int positions = 0;
 int destiny_position = 0;
-long int laps = 0;
 long int rpm = 0;
-int microstepping = 0;
-long int total_laps = 0;
 long int travel_mm = 0;
-unsigned long int travel_steps = 0;
-int leadscrew_pitch = 8;
 bool option_mm_steps = 0;
 
 
-// Serial Commands
-String command;
-//String inString = "";
 
 // control flag to show the menu
 boolean refresh_commands = false;
@@ -60,197 +41,6 @@ boolean refresh_commands = false;
 // DIRECTION LOW - MOVES RIGHT
 // DIRECTION HIGH - MOVES LEFT
 
-
-void go_to_position(int target_position){
-  
-  change_direction(LEFT); 
-  
-  Serial.print("Moving to position: ");
-  Serial.println(target_position);
-
-  for(int i=0; i<target_position; i++)
-    {
-      Serial.print("POSITION: ");
-      Serial.println(i+1);
-      rotate_motor(total_laps);
-      delay(1000);
-    }
-  Serial.println("Target Position reached!");
-  delay(3000);
-  Serial.println("Going Back.");
-  change_direction(RIGHT); 
-
-  for(int i=0; i<target_position; i++)
-    {
-      Serial.print("POSITION: ");
-      Serial.println(i+1);
-      rotate_motor(total_laps);
-      delay(1000);
-    }
-}
-
-void run_sequence(int cycles, int positions){
-  int j = 0;
-    
-  for(j=0; j<cycles; j++)
-  {
-    Serial.print("Cycle:      ");
-    Serial.println(j);
-    // Start always moving to LEFT
-    change_direction(LEFT);
-    delay(1000);
-    Serial.println("Direction changed to: LEFT");
-    
-    for(int i=0; i<positions; i++)
-    {
-      Serial.print("FWD Pos.: ");
-      Serial.println(i);
-      if(option_mm_steps == 0)
-      {
-        rotate_motor(total_laps);
-      }
-      if(option_mm_steps == 1)
-      {
-        calculate_travel_mm(travel_mm);
-        
-        Serial.print("TRAVEL_STEPS: ");
-        Serial.println(travel_steps);
-        
-        rotate_motor(travel_steps);
-      }    
-      delay(1000);
-    }
-    delay(1000);
-    change_direction(RIGHT);
-    Serial.println("Direction changed to: RIGHT");
-    delay(1000);
-    
-    for(int i=0; i<positions; i++)
-    {
-      Serial.print("BWD Pos.: ");
-      Serial.println(i);
-      if(option_mm_steps == 0)
-      {
-        rotate_motor(total_laps);
-      }
-      if(option_mm_steps == 1)
-      {
-        calculate_travel_mm(travel_mm);
-        rotate_motor(travel_steps);
-      }
-      delay(1000);
-    }
-  }
-}
-
-void rotate_motor(unsigned long int motor_steps){
-  Serial.println("START");
-  Serial.print("Rotating: ");
-  Serial.print(motor_steps);
-  Serial.println(" steps");
-  
-  digitalWrite(ENA, LOW);
-  delay(500);
-  for (unsigned long int i=0; i<motor_steps; i++)
-  {
-    digitalWrite(PUL,HIGH);
-    delayMicroseconds(_speed);
-    digitalWrite(PUL,LOW);
-    delayMicroseconds(_speed);
-    //Serial.println(i);
-  }
-  //  DEBUG 
-  // to avoid the motor outputs to be disconnected immediately after the last step 
-  // is taken and the motor moving. Might need adjustment ...
-  delay(1000);
-  //  DEBUG
-  digitalWrite(ENA, HIGH);
-  
-  Serial.print("Rotated: ");
-  Serial.print(motor_steps);
-  Serial.println(" steps");
-  Serial.println("STOP");
-}
-
-/* int input_data(){
-  int inChar = 0;
-  boolean flag = false;
-  
-  Serial.println("How many?");
-  Serial.println(" ");
-
-  do{
-     while (Serial.available() > 0) {
-        inChar = Serial.read();
-        if (isDigit(inChar)) {
-          // convert the incoming byte to a char and add it to the string:
-          inString += (char)inChar;
-        }
-        // if you get a newline, print the string, then the string's value:
-        if (inChar == '\n') {
-          input_value = inString.toInt();
-          
-          // clear the string for new input:
-          inString = "";
-          flag = true;
-        }
-//        // if the received char is an 'Z', then it triggers a flag to leave the menu
-//        if(inChar == 'Z')
-//        {
-//          flag = true;
-//        }
-      }
-  }while(!flag);
-  
-  return input_value;
-} */
-
-void run_laps(){
-//  long int total_laps = 0;
-//  total_laps = laps * steps_per_revolution * microstepping;
-//  moved to the main cycle and changed run_sequence to include the laps
-  Serial.print("Total Laps Steps: ");         // to be tested.
-  Serial.println(total_laps);
-
-  Serial.print("Laps: ");                   // to be tested.
-  Serial.println(laps);
-
-  Serial.print("Steps/rev: ");              // to be tested.
-  Serial.println(steps_per_revolution);
-
-  Serial.print("MicroStepping: ");          // to be tested.
-  Serial.println(microstepping);
-
-  // change direction
-  change_direction(LEFT);
-
-  // rotate motor
-  rotate_motor(total_laps);              // variables must be long otherwise we cannot do the same number of steps as others
-
-  delay(1000);
-
-  // change direction
-  change_direction(RIGHT);
-
-  // rotate motor
-  rotate_motor(total_laps);
-
-  Serial.print(laps);
-  Serial.println(" - Laps completed.");
-}
-
-bool change_direction(bool direction){
-  delayMicroseconds(500);
-    digitalWrite(ENA,HIGH);
-  delayMicroseconds(100);
-    digitalWrite(DIR,direction);
-  delayMicroseconds(500);
-    digitalWrite(ENA,LOW);
-  delayMicroseconds(100);
-    Serial.print("Read Dir: ");
-    Serial.println(digitalRead(DIR));
-    return digitalRead(DIR);
-}
 
 void menu_print(){
   Serial.println(F(" ********************** MOTOR CONTROL CENTER ********************** "));
@@ -323,80 +113,7 @@ void variable_print(){
     Serial.println(" - mm Configured");
   }
   Serial.print("Direction:     ");
-  read_direction();                    
-}
-
-bool read_direction(){
-  
-  if(digitalRead(DIR) == HIGH)
-  {
-    Serial.println("LEFT");
-  }
-  else
-  {
-    if(digitalRead(DIR) == LOW)
-    {
-      Serial.println("RIGHT");
-    }
-  }
-  return digitalRead(DIR);
-}
-
-long int calculate_speed(long int _speed){
-  
-  float steps_per_second = 0;         // truncating a float to int -> error chance here
-  float temp_speed = 0;
-  
-  Serial.print("FUNCTION: Calculate_speed: ");
-  Serial.print(_speed);
-  Serial.println(" RPM");
-
-  steps_per_second = (_speed * steps_per_revolution) / minutes;
-  
-  Serial.print("FUNCTION: steps_per_second: ");
-  Serial.println(steps_per_second);
-
-  temp_speed = (1 / steps_per_second);
-
-  Serial.print("FUNCTION: temp_speed: ");
-  Serial.println(temp_speed);
-  
-  temp_speed = temp_speed / 2;        // to find Ton and Toff
-  
-  Serial.print("FUNCTION: temp_speed/2: ");
-  Serial.println(temp_speed);
-
-  temp_speed = temp_speed / 0.000001; // to convert to microseconds (input to delayMicroseconds() function)
-
-  Serial.print("FUNCTION: temp_speed/0,000001: ");
-  Serial.println(temp_speed);
-
-  temp_speed = (int) temp_speed;
-  Serial.print("FUNCTION: (int)temp_speed: ");
-  Serial.println(temp_speed);
-
-  Serial.print("FUNCTION: _speed in microseconds:  ");
-  Serial.print(temp_speed);
-  Serial.println(" uS");
-    
-  return temp_speed;
-}
-
-unsigned long int calculate_travel_mm(long int ftravel_mm){
-
-  Serial.print("Steps per Revolution: ");
-  Serial.println(steps_per_revolution);
-  Serial.print("Microstepping: ");
-  Serial.println(microstepping);
-  Serial.print("Leadscrew Pitch: ");
-  Serial.println(leadscrew_pitch);
-
-  travel_steps = ftravel_mm * ((steps_per_revolution * microstepping) / leadscrew_pitch);
-
-  Serial.print("Travel Steps: ");
-  Serial.println(travel_steps);
-  
-  return travel_steps;
+  read_direction(DIR);                    
 }
 
 void setup() {
@@ -437,14 +154,14 @@ void loop()
         if(command.equals("sd")){                   // checks if one direction is set, changes and then changes back again
             if(digitalRead(DIR) == HIGH)
             {
-              change_direction(RIGHT);
+              change_direction(ENA, DIR, RIGHT);
               Serial.println("Direction changed to: RIGHT");
             }
             else
             {
               if(digitalRead(DIR) == LOW)
               {
-                change_direction(LEFT);
+                change_direction(ENA, DIR, LEFT);
                 Serial.println("Direction changed to: LEFT");
               }
             }
@@ -502,51 +219,51 @@ void loop()
         }
         if(command.equals("1")){
             //Serial.println("1");
-            change_direction(LEFT);
+            change_direction(ENA, DIR, LEFT);
             steps = input_data();       // Asks before for how many steps to rotate and changes the value.
-            rotate_motor(steps);
+            rotate_motor(ENA, PUL, steps, _speed);
             refresh_commands = true;
         }
         if(command.equals("2")){
             //Serial.println("2");
-            change_direction(RIGHT);
+            change_direction(ENA, DIR, RIGHT);
             steps = input_data();       // Asks before for how many steps to rotate and changes the value.
-            rotate_motor(steps);
+            rotate_motor(ENA, PUL, steps, _speed);
             refresh_commands = true;
         }
         if(command.equals("3")){
             //Serial.println("3");
-            change_direction(LEFT);
-            rotate_motor(steps);
+            change_direction(ENA, DIR, LEFT);
+            rotate_motor(ENA, PUL, steps, _speed);
             refresh_commands = true;
         }
         if(command.equals("4")){
             //Serial.println("4");
-            change_direction(RIGHT);
-            rotate_motor(steps);
+            change_direction(ENA, DIR, RIGHT);
+            rotate_motor(ENA, PUL, steps, _speed);
             refresh_commands = true;
         }
         if(command.equals("5")){
             //Serial.println("5");
             travel_mm = input_data();
             calculate_travel_mm(travel_mm);
-            change_direction(LEFT);
-            rotate_motor(travel_steps);
+            change_direction(ENA, DIR, LEFT);
+            rotate_motor(ENA, PUL, steps, _speed);
             refresh_commands = true;
         }
         if(command.equals("6")){
             //Serial.println("6");
             travel_mm = input_data();
-            calculate_travel_mm(travel_mm);
-            change_direction(RIGHT);
-            rotate_motor(travel_steps);
+            rotate_motor(ENA, PUL, steps, _speed);
+            change_direction(ENA, DIR, RIGHT);
+            rotate_motor(ENA, PUL, steps, _speed);
             refresh_commands = true;
         }
         if(command.equals("7")){
             //Serial.println("7");
             destiny_position = input_data();
             total_laps = laps * steps_per_revolution * microstepping;
-            go_to_position(destiny_position);
+            go_to_position(ENA, DIR, destiny_position);
             refresh_commands = true;
         }
         if(command.equals("8")){
@@ -573,7 +290,7 @@ void loop()
             delay(3000);
             total_laps = laps * steps_per_revolution * microstepping;
             // run the planned sequence
-            run_sequence(cycles, positions);
+            run_sequence(ENA, DIR, PUL, cycles, positions);
             refresh_commands = true;
         }
         if(command.equals("rl")){
@@ -583,7 +300,7 @@ void loop()
             delay(3000);
             total_laps = laps * steps_per_revolution * microstepping;
             // calculate laps and activate motor
-            run_laps();
+            run_laps(ENA, DIR);
             refresh_commands = true;
         }
         if(command.equals("i")){

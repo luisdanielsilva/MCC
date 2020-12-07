@@ -3,5 +3,7 @@ This is the MCC OPL
 
 1. Configure PINS on the fly
     1.1 show PINS configured and function
-
-2. 
+    1.2 run a known configuration (NANO, ATMEGA) - each configuration has different pins. names and can be stored on the EEPROM up to a maximum of EEPROM size
+        1.2.1 configuration has pins, motors, data, etc....even BAUD rate.
+2. put configuration in numbering order to be easier to configure for anyone 1. set pins, 2 set motor speed, 3 set motor microstep, etc
+3. 

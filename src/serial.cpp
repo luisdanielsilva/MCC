@@ -1,10 +1,15 @@
 #include "serial.h"
 
 // ISR/main shared variables must be defined as volatile
-extern int input_data();
+// extern int input_data();
 
+// Shared variables
+String command = "";
+
+// Internal to .cpp
 String inString = "";
 
+// Function declarations
 int input_data(){
   int inChar = 0;
   boolean flag = false;

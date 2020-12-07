@@ -5,6 +5,9 @@
 #include "main.h"
 
 
+// External/Shared Variables/Functions
+extern String command;
+extern int input_data();
 
 
 // Function prototypes
