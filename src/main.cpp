@@ -1,5 +1,9 @@
 #include <Arduino.h>
 
+#include "main.h"
+#include "motor.h"
+#include "serial.h"
+
 
 // FUNCTION PROTOTYPES
 bool change_direction(bool direction);
@@ -21,8 +25,6 @@ bool read_direction();
 
 #define LEFT 1
 #define RIGHT 0
-
-
 
 String mcc_version = "2.4";
 String mcc_date = "24/11/2020";
@@ -47,9 +49,10 @@ unsigned long int travel_steps = 0;
 int leadscrew_pitch = 8;
 bool option_mm_steps = 0;
 
+
 // Serial Commands
 String command;
-String inString = "";
+//String inString = "";
 
 // control flag to show the menu
 boolean refresh_commands = false;
@@ -169,7 +172,7 @@ void rotate_motor(unsigned long int motor_steps){
   Serial.println("STOP");
 }
 
-int input_data(){
+/* int input_data(){
   int inChar = 0;
   boolean flag = false;
   
@@ -200,7 +203,7 @@ int input_data(){
   }while(!flag);
   
   return input_value;
-}
+} */
 
 void run_laps(){
 //  long int total_laps = 0;
