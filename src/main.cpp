@@ -3,23 +3,21 @@
 
 // FUNCTION PROTOTYPES
 bool change_direction(bool direction);
-void rotate_motor(long int motor_steps);
-long int calculate_travel_mm(long int ftravel_mm);
+void rotate_motor(unsigned long int motor_steps);
+unsigned long int calculate_travel_mm(long int ftravel_mm);
 bool read_direction();
-
-
 
 
 //#define INFO 
 // NANO Configuration
-//  int PUL=4; //define Pulse pin
-//  int DIR=3; //define Direction pin
-//  int ENA=2; //define Enable Pin
+ int PUL=4; //define Pulse pin
+ int DIR=3; //define Direction pin
+ int ENA=2; //define Enable Pin
 
 // MEGA 2560 Configuration
-int PUL=36;                   //define Pulse pin
-int DIR=40;                   //define Direction pin
-int ENA=38;                   //define Enable Pin
+// int PUL=9;                   //define Pulse pin
+// int DIR=8;                   //define Direction pin
+// int ENA=10;                   //define Enable Pin
 
 #define LEFT 1
 #define RIGHT 0
@@ -45,7 +43,7 @@ long int rpm = 0;
 int microstepping = 0;
 long int total_laps = 0;
 long int travel_mm = 0;
-long int travel_steps = 0;
+unsigned long int travel_steps = 0;
 int leadscrew_pitch = 8;
 bool option_mm_steps = 0;
 
@@ -111,6 +109,10 @@ void run_sequence(int cycles, int positions){
       if(option_mm_steps == 1)
       {
         calculate_travel_mm(travel_mm);
+        
+        Serial.print("TRAVEL_STEPS: ");
+        Serial.println(travel_steps);
+        
         rotate_motor(travel_steps);
       }    
       delay(1000);
@@ -138,24 +140,23 @@ void run_sequence(int cycles, int positions){
   }
 }
 
-void rotate_motor(long int motor_steps){
+void rotate_motor(unsigned long int motor_steps){
   Serial.println("START");
   Serial.print("Rotating: ");
   Serial.print(motor_steps);
   Serial.println(" steps");
   
-  long int i=0;
-  
   digitalWrite(ENA, LOW);
-  for (i=0; i<motor_steps; i++)
+  delay(500);
+  for (unsigned long int i=0; i<motor_steps; i++)
   {
     digitalWrite(PUL,HIGH);
     delayMicroseconds(_speed);
     digitalWrite(PUL,LOW);
     delayMicroseconds(_speed);
-    Serial.println(i);
+    //Serial.println(i);
   }
-  //  DEBUG
+  //  DEBUG 
   // to avoid the motor outputs to be disconnected immediately after the last step 
   // is taken and the motor moving. Might need adjustment ...
   delay(1000);
@@ -163,7 +164,7 @@ void rotate_motor(long int motor_steps){
   digitalWrite(ENA, HIGH);
   
   Serial.print("Rotated: ");
-  Serial.print(i);
+  Serial.print(motor_steps);
   Serial.println(" steps");
   Serial.println("STOP");
 }
@@ -268,7 +269,7 @@ void menu_print(){
   Serial.println(F("5   --> Move LEFT x mm"));
   Serial.println(F("6   --> Move RIGHT x mm"));
   Serial.println(F("7   --> Go to Target Position"));
-  Serial.println(F("8   --> Steps (1) or mm (0)"));
+  Serial.println(F("8   --> Steps (0) or mm (1)"));
   Serial.println(F("rs  --> Run Sequence"));
   Serial.println(F("rl  --> Run Laps"));
   Serial.println(F("i   --> Info"));
@@ -354,10 +355,22 @@ long int calculate_speed(long int _speed){
 
   temp_speed = (1 / steps_per_second);
 
+  Serial.print("FUNCTION: temp_speed: ");
+  Serial.println(temp_speed);
+  
   temp_speed = temp_speed / 2;        // to find Ton and Toff
+  
+  Serial.print("FUNCTION: temp_speed/2: ");
+  Serial.println(temp_speed);
+
   temp_speed = temp_speed / 0.000001; // to convert to microseconds (input to delayMicroseconds() function)
 
+  Serial.print("FUNCTION: temp_speed/0,000001: ");
+  Serial.println(temp_speed);
+
   temp_speed = (int) temp_speed;
+  Serial.print("FUNCTION: (int)temp_speed: ");
+  Serial.println(temp_speed);
 
   Serial.print("FUNCTION: _speed in microseconds:  ");
   Serial.print(temp_speed);
@@ -366,7 +379,7 @@ long int calculate_speed(long int _speed){
   return temp_speed;
 }
 
-long int calculate_travel_mm(long int ftravel_mm){
+unsigned long int calculate_travel_mm(long int ftravel_mm){
 
   Serial.print("Steps per Revolution: ");
   Serial.println(steps_per_revolution);
