@@ -32,8 +32,64 @@ long int travel_mm = 0;
 bool option_mm_steps = 0;
 
 
-// control flag to show the menu
-boolean refresh_commands = false;
+// NEW CLI
+
+// variables
+boolean error_flag = false;
+#define LINE_BUF_SIZE 128   // Maximum input string length
+#define ARG_BUF_SIZE 64     // Maximum argument string length
+#define MAX_NUM_ARGS 8      // Maximum number of arguments
+  
+char line[LINE_BUF_SIZE];
+char args[MAX_NUM_ARGS][ARG_BUF_SIZE];
+
+
+
+
+//List of functions pointers corresponding to each command
+int (*commands_func[])(){
+    &cmd_help,
+    &cmd_led,
+    &cmd_exit
+};
+ 
+//List of command names
+const char *commands_str[] = {
+    "help",
+    "led",
+    "exit"
+};
+
+int num_commands = sizeof(commands_str) / sizeof(char *);
+
+int cmd_led(){
+    
+   return 0;
+}
+ 
+int cmd_exit(){
+    Serial.println("Exiting CLI.");
+    while(1);
+    return 0;   // remove this. makes no sense
+}
+
+int cmd_help(){
+    help_help();
+}
+
+
+void help_help(){
+    Serial.println("The following commands are available:");
+ 
+    for(int i=0; i<num_commands; i++){
+        Serial.print("  ");
+        Serial.println(commands_str[i]);
+    }
+    Serial.println("");
+    Serial.println("You can for instance type \"help led\" for more info on the LED command.");
+}
+
+
 
 void menu_print(){
   Serial.println(F(" ********************** MOTOR CONTROL CENTER ********************** "));
@@ -110,203 +166,92 @@ void variable_print(){
 }
 
 void setup() {
-  pinMode (PUL, OUTPUT);
-  pinMode (DIR, OUTPUT);
-  pinMode (ENA, OUTPUT);
-
+  
   Serial.begin(115200);
   
-  digitalWrite(ENA, HIGH);
+  pinMode(LED_BUILTIN, OUTPUT);             // we should blink the LED every 1 second to make sure it's alive. except when a critical function is being performed AKA rotating motor
 
-  menu_print();
+  Serial.println("Welcome to MCC command line interface.");
+  Serial.println("Type \"help\" to see a list of commands.");
 }
 
 void loop()
 { 
-  if(Serial.available()){
-        command = Serial.readStringUntil('\n');
+  Serial.print("> ");
 
-        if(command.equals("p")){
-            variable_print();
-            refresh_commands == true;
-        }
-        if(command.equals("ss")){
-            //Serial.println("0");
-            _speed = input_data();
-            Serial.print(_speed);
-            Serial.println(" uS");
-            refresh_commands == true;
-        }
-        if(command.equals("ssr")){
-            //Serial.println("ssr");
-            temp_speed_rpm = input_data();
-            _speed = calculate_speed(temp_speed_rpm);
-            refresh_commands == true;
-        }
-        if(command.equals("sd")){                   // checks if one direction is set, changes and then changes back again
-            if(digitalRead(DIR) == HIGH)
-            {
-              change_direction(ENA, DIR, RIGHT);
-              Serial.println("Direction changed to: RIGHT");
-            }
-            else
-            {
-              if(digitalRead(DIR) == LOW)
-              {
-                change_direction(ENA, DIR, LEFT);
-                Serial.println("Direction changed to: LEFT");
-              }
-            }
-            refresh_commands == true;
-        }
-        if(command.equals("sst")){
-            //Serial.println("sst");
-            steps = input_data();
-            Serial.println(" ");
-            Serial.print(steps);
-            Serial.println(" - steps configured");
-            refresh_commands == true;
-        }
-        if(command.equals("smm")){
-            //Serial.println("smm");
-            travel_mm = input_data();
-            Serial.print(travel_mm);
-            Serial.println(" mm configured");
-            refresh_commands == true;
-        }
-        if(command.equals("sm")){
-            //Serial.println("sm");
-            Serial.println("sm --> how many microsteps?");
-            microstepping = input_data();
-            Serial.println(microstepping);
-            refresh_commands == true;
-        }
-        if(command.equals("spr")){
-            Serial.println("spr --> how many steps per revolution?");
-            steps_per_revolution = input_data();
-            Serial.println(steps_per_revolution);
-            refresh_commands == true;
-        }
-        if(command.equals("sp")){
-            //Serial.println("sp");
-            positions = input_data();
-            Serial.println("sp --> Configure Positions");
-            Serial.println(positions);
-            refresh_commands == true;
-        }
-        if(command.equals("sc")){
-            //Serial.println("sc");
-            cycles = input_data();
-            Serial.println("sc --> Configure Cycles");
-            Serial.println(cycles);
-            refresh_commands == true;
-        }
-        if(command.equals("sl")){
-            //Serial.println("sl");
-            Serial.println("sl --> how many laps?");
-            laps = input_data();
-            Serial.print(laps);
-            refresh_commands == true;
-        }
-        if(command.equals("1")){
-            //Serial.println("1");
-            change_direction(ENA, DIR, LEFT);
-            steps = input_data();       // Asks before for how many steps to rotate and changes the value.
-            rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands == true;
-        }
-        if(command.equals("2")){
-            //Serial.println("2");
-            change_direction(ENA, DIR, RIGHT);
-            steps = input_data();       // Asks before for how many steps to rotate and changes the value.
-            rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands == true;
-        }
-        if(command.equals("3")){
-            //Serial.println("3");
-            change_direction(ENA, DIR, LEFT);
-            rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands == true;
-        }
-        if(command.equals("4")){
-            //Serial.println("4");
-            change_direction(ENA, DIR, RIGHT);
-            rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands == true;
-        }
-        if(command.equals("5")){
-            //Serial.println("5");
-            travel_mm = input_data();
-            calculate_travel_mm(travel_mm);
-            change_direction(ENA, DIR, LEFT);
-            rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands == true;
-        }
-        if(command.equals("6")){
-            //Serial.println("6");
-            travel_mm = input_data();
-            rotate_motor(ENA, PUL, steps, _speed);
-            change_direction(ENA, DIR, RIGHT);
-            rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands == true;
-        }
-        if(command.equals("7")){
-            //Serial.println("7");
-            destiny_position = input_data();
-            total_laps = laps * steps_per_revolution * microstepping;
-            go_to_position(ENA, DIR, destiny_position);         
-            refresh_commands == true;
-        }
-        if(command.equals("8")){
-            //Serial.println("8");
-            Serial.println("Please select:");
-            Serial.println("0 = STEPS");
-            Serial.println("1 = mm");
-            option_mm_steps = input_data();
-            if(option_mm_steps == 0)
-            {
-              Serial.print(option_mm_steps);
-              Serial.println(" - STEPS Configured");
-            }
-            if(option_mm_steps == 1)
-            {
-              Serial.print(option_mm_steps);
-              Serial.println(" - mm Configured");
-            }
-            refresh_commands == true;  
-        }
-        if(command.equals("rs")){
-            Serial.println("rs --> Run Sequence");
-            variable_print();
-            delay(3000);
-            total_laps = laps * steps_per_revolution * microstepping;
-            // run the planned sequence
-            run_sequence(ENA, DIR, PUL, cycles, positions);
-            refresh_commands == true;
-        }
-        if(command.equals("rl")){
-            //Serial.println("rl");
-            Serial.println("rl --> how any laps? ");
-            variable_print();
-            delay(3000);
-            total_laps = laps * steps_per_revolution * microstepping;
-            // calculate laps and activate motor
-            run_laps(ENA, DIR);
-            refresh_commands == true;
-        }
-        if(command.equals("i")){
-            info_print();
-            refresh_commands == true;
+  read_line();
+
+  if(!error_flag){
+        parse_line();
+    }
+    if(!error_flag){
+        execute();
+    }
+ 
+    memset(line, 0, LINE_BUF_SIZE);
+    memset(args, 0, sizeof(args[0][0]) * MAX_NUM_ARGS * ARG_BUF_SIZE);
+ 
+    error_flag = false;
+
+}
+
+
+void read_line(){
+    String line_string;
+ 
+    while(!Serial.available());
+ 
+    if(Serial.available()){
+        line_string = Serial.readStringUntil("\n");
+        if(line_string.length() < LINE_BUF_SIZE){
+          line_string.toCharArray(line, LINE_BUF_SIZE);
+          Serial.println(line_string);
         }
         else{
-           Serial.println("Invalid command");
-           refresh_commands = true;
-          }        
-      refresh_commands == true;
-  }
-    if(refresh_commands == true){
-      menu_print();
-      refresh_commands = false;
+          Serial.println(F("Input string too long."));
+          error_flag = true;
+        }
     }
 }
 
+void parse_line()
+{
+  Serial.println(F("1 - Line Parser"));
+
+  char *argument;
+    int counter = 0;
+ 
+    argument = strtok(line, " ");
+ 
+    while((argument != NULL)){
+        if(counter < MAX_NUM_ARGS){
+            if(strlen(argument) < ARG_BUF_SIZE){
+                strcpy(args[counter],argument);
+                argument = strtok(NULL, " ");
+                counter++;
+            }
+            else{
+                Serial.println(F("Input string too long."));
+                error_flag = true;
+                break;
+            }
+        }
+        else{
+            break;
+        }
+    }
+}
+
+int execute()
+{
+  Serial.println(F("2 - Command Execution"));
+
+   for(int i=0; i<num_commands; i++){
+        if(strcmp(args[0], commands_str[i]) == 0){
+            return(*commands_func[i])();
+        }
+    }
+ 
+    Serial.println(F("Invalid command. Type \"help\" for more."));
+    return 0;
+}

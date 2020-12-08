@@ -28,6 +28,15 @@ bool read_direction();
 void menu_print();
 void info_print();
 void variable_print();
+void read_line();
+void parse_line();
+int execute();
+
+//Function declarations
+int cmd_help();
+int cmd_led();
+int cmd_exit();
+void help_help();
 
 
 #endif

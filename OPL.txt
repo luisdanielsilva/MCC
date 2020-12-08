@@ -6,4 +6,4 @@ This is the MCC OPL
     1.2 run a known configuration (NANO, ATMEGA) - each configuration has different pins. names and can be stored on the EEPROM up to a maximum of EEPROM size
         1.2.1 configuration has pins, motors, data, etc....even BAUD rate.
 2. put configuration in numbering order to be easier to configure for anyone 1. set pins, 2 set motor speed, 3 set motor microstep, etc
-3. 
+3. put every string for errors in progmem and simply print the error number to represent a given DTC
