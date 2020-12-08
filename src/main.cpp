@@ -4,7 +4,7 @@
 #include "motor.h"
 #include "serial.h"
 
-//#define INFO 
+// #define INFO 
 // NANO Configuration
  int PUL=4; //define Pulse pin
  int DIR=3; //define Direction pin
@@ -15,13 +15,11 @@
 // int DIR=8;                   //define Direction pin
 // int ENA=10;                   //define Enable Pin
 
-
 String mcc_version = "2.4";
 String mcc_date = "24/11/2020";
 String mcc_coder = "Luis Silva";
 
-
- long int input_value = 0;
+long int input_value = 0;
 long int _speed = 0;
 long int temp_speed_rpm = 0;
 long int speed_rpm = 0;
@@ -34,13 +32,8 @@ long int travel_mm = 0;
 bool option_mm_steps = 0;
 
 
-
 // control flag to show the menu
 boolean refresh_commands = false;
-
-// DIRECTION LOW - MOVES RIGHT
-// DIRECTION HIGH - MOVES LEFT
-
 
 void menu_print(){
   Serial.println(F(" ********************** MOTOR CONTROL CENTER ********************** "));
@@ -128,28 +121,27 @@ void setup() {
   menu_print();
 }
 
-void loop() 
+void loop()
 { 
   if(Serial.available()){
         command = Serial.readStringUntil('\n');
 
         if(command.equals("p")){
             variable_print();
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("ss")){
             //Serial.println("0");
             _speed = input_data();
             Serial.print(_speed);
             Serial.println(" uS");
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("ssr")){
             //Serial.println("ssr");
             temp_speed_rpm = input_data();
             _speed = calculate_speed(temp_speed_rpm);
-                        
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("sd")){                   // checks if one direction is set, changes and then changes back again
             if(digitalRead(DIR) == HIGH)
@@ -165,8 +157,7 @@ void loop()
                 Serial.println("Direction changed to: LEFT");
               }
             }
-        
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("sst")){
             //Serial.println("sst");
@@ -174,74 +165,74 @@ void loop()
             Serial.println(" ");
             Serial.print(steps);
             Serial.println(" - steps configured");
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("smm")){
             //Serial.println("smm");
             travel_mm = input_data();
             Serial.print(travel_mm);
             Serial.println(" mm configured");
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("sm")){
             //Serial.println("sm");
             Serial.println("sm --> how many microsteps?");
             microstepping = input_data();
             Serial.println(microstepping);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("spr")){
             Serial.println("spr --> how many steps per revolution?");
             steps_per_revolution = input_data();
             Serial.println(steps_per_revolution);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("sp")){
             //Serial.println("sp");
             positions = input_data();
             Serial.println("sp --> Configure Positions");
             Serial.println(positions);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("sc")){
             //Serial.println("sc");
             cycles = input_data();
             Serial.println("sc --> Configure Cycles");
             Serial.println(cycles);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("sl")){
             //Serial.println("sl");
             Serial.println("sl --> how many laps?");
             laps = input_data();
             Serial.print(laps);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("1")){
             //Serial.println("1");
             change_direction(ENA, DIR, LEFT);
             steps = input_data();       // Asks before for how many steps to rotate and changes the value.
             rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("2")){
             //Serial.println("2");
             change_direction(ENA, DIR, RIGHT);
             steps = input_data();       // Asks before for how many steps to rotate and changes the value.
             rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("3")){
             //Serial.println("3");
             change_direction(ENA, DIR, LEFT);
             rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("4")){
             //Serial.println("4");
             change_direction(ENA, DIR, RIGHT);
             rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("5")){
             //Serial.println("5");
@@ -249,7 +240,7 @@ void loop()
             calculate_travel_mm(travel_mm);
             change_direction(ENA, DIR, LEFT);
             rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("6")){
             //Serial.println("6");
@@ -257,14 +248,14 @@ void loop()
             rotate_motor(ENA, PUL, steps, _speed);
             change_direction(ENA, DIR, RIGHT);
             rotate_motor(ENA, PUL, steps, _speed);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("7")){
             //Serial.println("7");
             destiny_position = input_data();
             total_laps = laps * steps_per_revolution * microstepping;
-            go_to_position(ENA, DIR, destiny_position);
-            refresh_commands = true;
+            go_to_position(ENA, DIR, destiny_position);         
+            refresh_commands == true;
         }
         if(command.equals("8")){
             //Serial.println("8");
@@ -281,8 +272,8 @@ void loop()
             {
               Serial.print(option_mm_steps);
               Serial.println(" - mm Configured");
-            }  
-            refresh_commands = true;
+            }
+            refresh_commands == true;  
         }
         if(command.equals("rs")){
             Serial.println("rs --> Run Sequence");
@@ -291,7 +282,7 @@ void loop()
             total_laps = laps * steps_per_revolution * microstepping;
             // run the planned sequence
             run_sequence(ENA, DIR, PUL, cycles, positions);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("rl")){
             //Serial.println("rl");
@@ -301,20 +292,21 @@ void loop()
             total_laps = laps * steps_per_revolution * microstepping;
             // calculate laps and activate motor
             run_laps(ENA, DIR);
-            refresh_commands = true;
+            refresh_commands == true;
         }
         if(command.equals("i")){
             info_print();
-            refresh_commands = true;
+            refresh_commands == true;
         }
         else{
            Serial.println("Invalid command");
            refresh_commands = true;
-        }        
-        refresh_commands = true;            // added here to remove from all other commands
-    }
-    if (refresh_commands == true){
+          }        
+      refresh_commands == true;
+  }
+    if(refresh_commands == true){
       menu_print();
       refresh_commands = false;
     }
 }
+

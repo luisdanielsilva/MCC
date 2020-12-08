@@ -25,5 +25,9 @@ bool change_direction(bool direction);
 void rotate_motor(unsigned long int motor_steps);
 unsigned long int calculate_travel_mm(long int ftravel_mm);
 bool read_direction();
+void menu_print();
+void info_print();
+void variable_print();
+
 
 #endif
