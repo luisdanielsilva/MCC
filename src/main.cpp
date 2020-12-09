@@ -1,10 +1,20 @@
 #include <Arduino.h>
+#include <SimpleCLI.h>
 
 #include "main.h"
 #include "motor.h"
 #include "serial.h"
 
-// #define INFO 
+String mcc_version = "Version: 0.1";
+String mcc_date = "Date: 08/12/2020";
+String mcc_coder = "Author: Luis Silva";
+
+SimpleCLI cli;
+
+Command ping;
+
+
+ // #define INFO 
 // NANO Configuration
  int PUL=4; //define Pulse pin
  int DIR=3; //define Direction pin
@@ -14,10 +24,6 @@
 // int PUL=9;                   //define Pulse pin
 // int DIR=8;                   //define Direction pin
 // int ENA=10;                   //define Enable Pin
-
-String mcc_version = "2.4";
-String mcc_date = "24/11/2020";
-String mcc_coder = "Luis Silva";
 
 long int input_value = 0;
 long int _speed = 0;
@@ -29,66 +35,41 @@ int positions = 0;
 int destiny_position = 0;
 long int rpm = 0;
 long int travel_mm = 0;
-bool option_mm_steps = 0;
+bool option_mm_steps = 0; 
 
+// Callback function for ping command
+void pingCallback(cmd* c) {
+    Command cmd(c); // Create wrapper object
 
-// NEW CLI
+    // Get arguments
+    Argument numberArg = cmd.getArgument("number");
+    Argument strArg    = cmd.getArgument("str");
+    Argument cArg      = cmd.getArgument("c");
 
-// variables
-boolean error_flag = false;
-#define LINE_BUF_SIZE 128   // Maximum input string length
-#define ARG_BUF_SIZE 64     // Maximum argument string length
-#define MAX_NUM_ARGS 8      // Maximum number of arguments
-  
-char line[LINE_BUF_SIZE];
-char args[MAX_NUM_ARGS][ARG_BUF_SIZE];
+    // Get values
+    int numberValue = numberArg.getValue().toInt();
+    String strValue = strArg.getValue();
+    bool   cValue   = cArg.isSet();
 
+    if (cValue) strValue.toUpperCase();
 
-
-
-//List of functions pointers corresponding to each command
-int (*commands_func[])(){
-    &cmd_help,
-    &cmd_led,
-    &cmd_exit
-};
- 
-//List of command names
-const char *commands_str[] = {
-    "help",
-    "led",
-    "exit"
-};
-
-int num_commands = sizeof(commands_str) / sizeof(char *);
-
-int cmd_led(){
-    
-   return 0;
-}
- 
-int cmd_exit(){
-    Serial.println("Exiting CLI.");
-    while(1);
-    return 0;   // remove this. makes no sense
+    // Print response
+    for (int i = 0; i<numberValue; i++) Serial.println(strValue);
 }
 
-int cmd_help(){
-    help_help();
-}
+// Callback in case of an error
+void errorCallback(cmd_error* e) {
+    CommandError cmdError(e); // Create wrapper object
 
+    Serial.print("ERROR: ");
+    Serial.println(cmdError.toString());
 
-void help_help(){
-    Serial.println("The following commands are available:");
- 
-    for(int i=0; i<num_commands; i++){
-        Serial.print("  ");
-        Serial.println(commands_str[i]);
+    if (cmdError.hasCommand()) {
+        Serial.print("Did you mean \"");
+        Serial.print(cmdError.getCommand().toString());
+        Serial.println("\"?");
     }
-    Serial.println("");
-    Serial.println("You can for instance type \"help led\" for more info on the LED command.");
 }
-
 
 
 void menu_print(){
@@ -173,85 +154,44 @@ void setup() {
 
   Serial.println("Welcome to MCC command line interface.");
   Serial.println("Type \"help\" to see a list of commands.");
+
+  cli.setOnError(errorCallback);
+
+  // Command PING
+  ping = cli.addCommand("ping", pingCallback);
+  ping.addArgument("number");
+  ping.addPositionalArgument("str", "pong");
+  ping.addFlagArgument("c");
+
+  Serial.println("Type: ping -str \"Hello World\" -number 1 -c");
 }
 
 void loop()
 { 
-  Serial.print("> ");
+  // Check if user typed something into the serial monitor
+    if (Serial.available()) {
+        // Read out string from the serial monitor
+        String input = Serial.readStringUntil('\n');
 
-  read_line();
+        // Echo the user input
+        Serial.print("> ");
+        Serial.println(input);
 
-  if(!error_flag){
-        parse_line();
+        // Parse the user input into the CLI
+        cli.parse(input);
     }
-    if(!error_flag){
-        execute();
-    }
- 
-    memset(line, 0, LINE_BUF_SIZE);
-    memset(args, 0, sizeof(args[0][0]) * MAX_NUM_ARGS * ARG_BUF_SIZE);
- 
-    error_flag = false;
 
-}
+    if (cli.errored()) {
+        CommandError cmdError = cli.getError();
 
+        Serial.print("ERROR: ");
+        Serial.println(cmdError.toString());
 
-void read_line(){
-    String line_string;
- 
-    while(!Serial.available());
- 
-    if(Serial.available()){
-        line_string = Serial.readStringUntil("\n");
-        if(line_string.length() < LINE_BUF_SIZE){
-          line_string.toCharArray(line, LINE_BUF_SIZE);
-          Serial.println(line_string);
-        }
-        else{
-          Serial.println(F("Input string too long."));
-          error_flag = true;
+        if (cmdError.hasCommand()) {
+            Serial.print("Did you mean \"");
+            Serial.print(cmdError.getCommand().toString());
+            Serial.println("\"?");
         }
     }
-}
 
-void parse_line()
-{
-  Serial.println(F("1 - Line Parser"));
-
-  char *argument;
-    int counter = 0;
- 
-    argument = strtok(line, " ");
- 
-    while((argument != NULL)){
-        if(counter < MAX_NUM_ARGS){
-            if(strlen(argument) < ARG_BUF_SIZE){
-                strcpy(args[counter],argument);
-                argument = strtok(NULL, " ");
-                counter++;
-            }
-            else{
-                Serial.println(F("Input string too long."));
-                error_flag = true;
-                break;
-            }
-        }
-        else{
-            break;
-        }
-    }
-}
-
-int execute()
-{
-  Serial.println(F("2 - Command Execution"));
-
-   for(int i=0; i<num_commands; i++){
-        if(strcmp(args[0], commands_str[i]) == 0){
-            return(*commands_func[i])();
-        }
-    }
- 
-    Serial.println(F("Invalid command. Type \"help\" for more."));
-    return 0;
 }

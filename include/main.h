@@ -32,11 +32,17 @@ void read_line();
 void parse_line();
 int execute();
 
-//Function declarations
-int cmd_help();
-int cmd_led();
-int cmd_exit();
+//  Function declarations
+// HELP
+void cmd_help();
 void help_help();
 
+// INFO
+void cmd_info();
+void help_info();
+
+// SETPINS
+void cmd_setpins();
+void help_setpins();
 
 #endif
