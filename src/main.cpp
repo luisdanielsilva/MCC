@@ -7,11 +7,14 @@
 
 String mcc_version = "Version: 0.1";
 String mcc_date = "Date: 08/12/2020";
-String mcc_coder = "Author: Luis Silva";
+String mcc_coder = "Author: Luís Silva @ luisdanielsilva@gmail.com";
 
 SimpleCLI cli;
 
 Command ping;
+Command help;
+Command info;
+Command setpins;
 
 
  // #define INFO 
@@ -37,7 +40,7 @@ long int rpm = 0;
 long int travel_mm = 0;
 bool option_mm_steps = 0; 
 
-// Callback function for ping command
+// ***********************************************    CALLBACK FUNCTIONS    ***********************************************
 void pingCallback(cmd* c) {
     Command cmd(c); // Create wrapper object
 
@@ -55,6 +58,82 @@ void pingCallback(cmd* c) {
 
     // Print response
     for (int i = 0; i<numberValue; i++) Serial.println(strValue);
+}
+
+void helpCallback(cmd* c) {
+    Command cmd(c); // Create wrapper object
+
+    Serial.println("Available commands are: ");
+    Serial.println("help - this command");
+    Serial.println("info - information");
+    Serial.println("ping - ping command");
+    Serial.println("setpins - set motor interface");
+}
+
+void infoCallback(cmd* c) {
+    Command cmd(c); // Create wrapper object
+
+    Serial.println("Information:");
+    Serial.println(mcc_version);
+    Serial.println(mcc_date);
+    Serial.println(mcc_coder);
+}
+
+void setpinsCallback(cmd* c) {
+    Command cmd(c); // Create wrapper object
+
+    Serial.println("PINS DEFINED AS:");
+     // Get arguments
+    Argument ena_pinArg = cmd.getArgument("ENA");
+    Argument dir_pinArg = cmd.getArgument("DIR");
+    Argument pul_pinArg = cmd.getArgument("PUL");
+
+    // Get values
+    int ENA = ena_pinArg.getValue().toInt();
+    int DIR = dir_pinArg.getValue().toInt();
+    int PUL = pul_pinArg.getValue().toInt();
+    
+    // Validate pin range (between 1 and 50) or depends on platform
+
+    Serial.println("ENA - DIR - PUL ");
+    Serial.print(" ");
+    Serial.print(ENA);
+    Serial.print("  -  ");
+    Serial.print(DIR);
+    Serial.print("  -  ");
+    Serial.println(PUL);
+}
+
+
+// ***********************************************    SETUP COMMANDS    ***********************************************
+void setupCommandPing(){
+  // Command PING
+  ping = cli.addCommand("ping", pingCallback);
+  ping.addArgument("number");
+  ping.addPositionalArgument("str", "pong");
+  ping.addFlagArgument("c");
+
+  //Serial.println("Type: ping -str \"Hello World\" -number 1 -c");
+}
+
+void setupCommandHelp(){
+  // Command PING
+  help = cli.addCommand("help", helpCallback);
+}
+
+
+void setupCommandInfo(){
+  // Command INFO
+  info = cli.addCommand("info", infoCallback);
+}
+
+void setupCommandSetPins(){
+  // Command Setpins
+  setpins = cli.addCommand("setpins", setpinsCallback);
+  
+  setpins.addArgument("ENA");
+  setpins.addArgument("DIR");
+  setpins.addArgument("PUL");
 }
 
 // Callback in case of an error
@@ -157,13 +236,10 @@ void setup() {
 
   cli.setOnError(errorCallback);
 
-  // Command PING
-  ping = cli.addCommand("ping", pingCallback);
-  ping.addArgument("number");
-  ping.addPositionalArgument("str", "pong");
-  ping.addFlagArgument("c");
-
-  Serial.println("Type: ping -str \"Hello World\" -number 1 -c");
+  setupCommandPing();
+  setupCommandHelp();
+  setupCommandInfo();
+  setupCommandSetPins();
 }
 
 void loop()

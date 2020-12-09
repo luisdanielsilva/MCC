@@ -28,21 +28,9 @@ bool read_direction();
 void menu_print();
 void info_print();
 void variable_print();
-void read_line();
-void parse_line();
-int execute();
 
-//  Function declarations
-// HELP
-void cmd_help();
-void help_help();
-
-// INFO
-void cmd_info();
-void help_info();
-
-// SETPINS
-void cmd_setpins();
-void help_setpins();
-
+// Commands - Function Prototypes
+void setupCommandPing();
+void setupCommandHelp();
+void setupCommandInfo();
 #endif
