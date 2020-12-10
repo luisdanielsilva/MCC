@@ -47,26 +47,23 @@ int leadscrew_pitch = 8;
 
 // Function declarations
 
-void setupMotor(int pin_ena)
-{
-  digitalWrite(pin_ena, LOW);
-
-  Serial.println("Turning off the output stage of motor driver");
-}
-
 bool change_direction(int pin_ena, int pin_dir, bool direction){
+    // this simply puts the direction on the pin, not the variable (COMMON MISTAKE). can be changed to check if direction has changed in the variable and if so to change in the pin otherwise let it go through
+  delayMicroseconds(500);
+    digitalWrite(pin_ena, HIGH);
+  delayMicroseconds(100);
+
+    digitalWrite(pin_dir, direction);
 
   delayMicroseconds(500);
-    digitalWrite(pin_ena,HIGH);
+    digitalWrite(pin_ena, LOW);
   delayMicroseconds(100);
-    digitalWrite(pin_dir,direction);
-  delayMicroseconds(500);
-    digitalWrite(pin_ena,LOW);
-  delayMicroseconds(100);
-    Serial.print("Read Dir: ");
-    Serial.println(digitalRead(pin_dir));
+
+  int temp = 99;
+  temp = digitalRead(pin_dir);
+  Serial.println(temp);
   
-  return digitalRead(pin_dir);
+  return temp;
 }
 
 unsigned long int calculate_travel_laps(long int movement_laps)
@@ -94,24 +91,24 @@ long int calculate_speed(long int speed){
 
   temp_speed = (1 / steps_per_second);
 
-  Serial.print(F("temp_speed: "));
-  Serial.println(temp_speed,4);
+  // Serial.print(F("temp_speed: "));
+  // Serial.println(temp_speed,4);
   
   temp_speed = temp_speed / 2;        // to find Ton and Toff
   
-  Serial.print(F("temp_speed/2: "));
-  Serial.println(temp_speed,4);
+  // Serial.print(F("temp_speed/2: "));
+  // Serial.println(temp_speed,4);
 
   temp_speed = temp_speed / 0.000001; // to convert to microseconds (input to delayMicroseconds() function)
 
-  Serial.print(F("temp_speed/0,000001: "));
-  Serial.println(temp_speed,4);
+  // Serial.print(F("temp_speed/0,000001: "));
+  // Serial.println(temp_speed,4);
 
   temp_speed = (int) temp_speed;
-  Serial.print(F("(int)temp_speed: "));
-  Serial.println(temp_speed,4);
+  // Serial.print(F("(int)temp_speed: "));
+  // Serial.println(temp_speed,4);
 
-  Serial.print(F("_speed in microseconds:  "));
+  Serial.print(F("Speed in microseconds:  "));
   Serial.print(temp_speed);
   Serial.println(" uS");
     
@@ -121,16 +118,16 @@ long int calculate_speed(long int speed){
 unsigned long int calculate_travel_mm(long int ftravel_mm){
   
   // all variables here should be local
-  Serial.print("Steps per Revolution: ");
+  Serial.print(F("Steps per Revolution: "));
   Serial.println(motor_steps_per_revolution);
-  Serial.print("Microstepping: ");
+  Serial.print(F("Microstepping: "));
   Serial.println(motor_microstepping);
-  Serial.print("Leadscrew Pitch: ");
+  Serial.print(F("Leadscrew Pitch: "));
   Serial.println(leadscrew_pitch);
 
   movement_steps = ftravel_mm * ((motor_steps_per_revolution * motor_microstepping) / leadscrew_pitch);
 
-  Serial.print("Travel Steps: ");
+  Serial.print(F("Travel Steps: "));
   Serial.println(movement_steps);
   
   return movement_steps;
@@ -169,109 +166,49 @@ void rotate_motor(int pin_ena, int pin_pul, unsigned long int motor_steps, long 
   Serial.println("STOP");
 }
 
+void run_sequence(int pin_ena, int pin_dir, int pin_pul, int cycles, int positions, int type){
+   
+  Serial.println(F("Running sequence"));
+  Serial.print(F("Cycles:    "));
+  Serial.println(cycles);
+  Serial.print(F("Positions: "));
+  Serial.println(positions);
 
-
-
-
-
-
-
-bool read_direction(int pin_dir){
-  
-  if(digitalRead(pin_dir) == HIGH)
+  for(int j=1; j<=cycles; j++)
   {
-    Serial.println("LEFT");
-  }
-  else
-  {
-    if(digitalRead(pin_dir) == LOW)
-    {
-      Serial.println("RIGHT");
-    }
-  }
-  return digitalRead(pin_dir);
-}
-
-
-void go_to_position(int pin_ena, int pin_dir, int target_position){
-  
-  change_direction(pin_ena, pin_dir, LEFT); 
-  
-  Serial.print("Moving to position: ");
-  Serial.println(target_position);
-
-  for(int i=0; i<target_position; i++)
-    {
-      Serial.print("POSITION: ");
-      Serial.println(i+1);
-      //rotate_motor(total_laps);
-      delay(1000);
-    }
-  Serial.println("Target Position reached!");
-  delay(3000);
-  Serial.println("Going Back.");
-  change_direction(pin_ena, pin_dir, RIGHT); 
-
-  for(int i=0; i<target_position; i++)
-    {
-      Serial.print("POSITION: ");
-      Serial.println(i+1);
-      //rotate_motor(total_laps);
-      delay(1000);
-    }
-}
-
-
-void run_sequence(int pin_ena, int pin_dir, int pin_pul, int cycles, int positions){
-  int j = 0;
-    
-  for(j=0; j<cycles; j++)
-  {
-    Serial.print("Cycle:      ");
+    Serial.print(F("Cycle:      "));
     Serial.println(j);
-    // Start always moving to LEFT
-    change_direction(pin_ena, pin_dir, LEFT);
-    delay(1000);
-    Serial.println("Direction changed to: LEFT");
     
-    for(int i=0; i<positions; i++)
+    change_direction(ENA, DIR, motor_direction);
+
+    for(int i=1; i<=positions; i++)
     {
-      Serial.print("FWD Pos.: ");
+      Serial.print(F("FWD Pos.: "));
+      Serial.print("DIR: ");
+      Serial.println(motor_direction);
       Serial.println(i);
-      /* if(option_mm_steps == 0)
-      {
-        //rotate_motor(total_laps);
-      }
-      if(option_mm_steps == 1)
-      {
-        calculate_travel_mm(travel_mm);
-        
-        Serial.print("TRAVEL_STEPS: ");
-        Serial.println(travel_steps);
-        
-        rotate_motor(pin_ena, pin_pul, travel_steps, _speed);
-      }  */   
+      
+      //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);          
+
       delay(1000);
     }
     delay(1000);
-    change_direction(pin_ena, pin_dir, RIGHT);
-    Serial.println("Direction changed to: RIGHT");
-    delay(1000);
-    
-    for(int i=0; i<positions; i++)
+
+    Serial.println(motor_direction);
+    motor_direction = !motor_direction;
+        change_direction(ENA, DIR, motor_direction);              // direction must be changed here. It is the contrary to whatever was selected before
+    Serial.println(motor_direction);
+
+    for(int i=1; i<=positions; i++)
     {
-      Serial.print("BWD Pos.: ");
+      Serial.print(F("BWD Pos.: "));
+      Serial.print("DIR: ");
+      Serial.println(motor_direction);
       Serial.println(i);
-     /*  if(option_mm_steps == 0)
-      {
-        //rotate_motor(total_laps);
-      }
-      if(option_mm_steps == 1)
-      {
-        calculate_travel_mm(travel_mm);
-        rotate_motor(pin_ena, pin_pul, travel_steps, _speed);
-      } */
+      //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);          
       delay(1000);
     }
+    motor_direction = !motor_direction;
   }
+  Serial.print(F("Sequence complete!"));
 }

@@ -20,12 +20,14 @@ Inline definitions of functions that require an additional #include, that are su
 functions should have little if any fan out, and if they do have fan out, it should be localized to stuff defined in the header.
  */
 
+
+// External/Shared Variables/Functions
+
+
 // FUNCTION PROTOTYPES
 bool change_direction(bool direction);
 void rotate_motor(unsigned long int motor_steps);
 unsigned long int calculate_travel_mm(long int ftravel_mm);
-void menu_print();
-void variable_print();
 
 // Commands - Function Prototypes
 void setupCommandPing();
