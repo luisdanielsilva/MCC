@@ -3,7 +3,6 @@
 
 #include "main.h"
 #include "motor.h"
-#include "serial.h"
 
 #define DEBUG_ON 1
 #define DEBUG_OFF 0
@@ -244,7 +243,7 @@ void setstartCallback(cmd* c) {
     Command cmd(c); // Create wrapper object
 
     String argument;
-    
+
      // Get arguments
     Argument typeArg = cmd.getArgument(0);
     
