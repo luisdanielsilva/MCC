@@ -3,18 +3,139 @@
 // ISR/main shared variables must be defined as volatile
 // extern int input_data();
 
+// NANO Configuration
+// int PUL=4; //define Pulse pin
+// int DIR=3; //define Direction pin
+// int ENA=2; //define Enable Pin
+
+// MEGA 2560 Configuration
+// int PUL=9;                   //define Pulse pin
+// int DIR=8;                   //define Direction pin
+// int ENA=10;                   //define Enable Pin
+
+
 // Shared variables
-int steps_per_revolution = 200;
-unsigned long int travel_steps = 0;
-int microstepping = 0;
-long int total_laps = 0;
-long int laps = 0;
+
+// MOTOR INTERFACE
+int ENA = 0;
+int PUL = 0;
+int DIR = 0;
+
+// MOTOR
+long int motor_speed_rpm = 0;
+long int motor_steps_per_revolution = 0;
+int motor_microstepping = 0;
+bool motor_direction = 0;
+long int motor_speed_temp = 0;
+
+// MOVEMENT
+unsigned long int movement_steps = 0;
+long int movement_laps = 0;
+unsigned long int movement_mm = 0;
+int movement_type = 0;
+unsigned long int movement_steps_temp = 0;
+
+// AUTOMATION
+int auto_cycles = 0;
+int auto_positions = 0;
+int auto_type = 0;
+
 
 // Internal to .cpp
 int minutes = 60;
 int leadscrew_pitch = 8;
 
 // Function declarations
+
+void setupMotor(int pin_ena)
+{
+  digitalWrite(pin_ena, LOW);
+
+  Serial.println("Turning off the output stage of motor driver");
+}
+
+bool change_direction(int pin_ena, int pin_dir, bool direction){
+
+  delayMicroseconds(500);
+    digitalWrite(pin_ena,HIGH);
+  delayMicroseconds(100);
+    digitalWrite(pin_dir,direction);
+  delayMicroseconds(500);
+    digitalWrite(pin_ena,LOW);
+  delayMicroseconds(100);
+    Serial.print("Read Dir: ");
+    Serial.println(digitalRead(pin_dir));
+  
+  return digitalRead(pin_dir);
+}
+
+unsigned long int calculate_travel_laps(long int movement_laps)
+{
+  unsigned long int steps = 0;
+
+  // convert laps to steps here
+
+  return steps;
+}
+
+long int calculate_speed(long int speed){
+  
+  float steps_per_second = 0;         // truncating a float to int -> error chance here
+  float temp_speed = 0;
+  
+  Serial.print(F("Calculate_speed: "));
+  Serial.print(speed);
+  Serial.println(" RPM");
+
+  steps_per_second = (speed * motor_steps_per_revolution) / minutes;
+  
+  Serial.print(F("steps_per_second: "));
+  Serial.println(steps_per_second);
+
+  temp_speed = (1 / steps_per_second);
+
+  Serial.print(F("temp_speed: "));
+  Serial.println(temp_speed,4);
+  
+  temp_speed = temp_speed / 2;        // to find Ton and Toff
+  
+  Serial.print(F("temp_speed/2: "));
+  Serial.println(temp_speed,4);
+
+  temp_speed = temp_speed / 0.000001; // to convert to microseconds (input to delayMicroseconds() function)
+
+  Serial.print(F("temp_speed/0,000001: "));
+  Serial.println(temp_speed,4);
+
+  temp_speed = (int) temp_speed;
+  Serial.print(F("(int)temp_speed: "));
+  Serial.println(temp_speed,4);
+
+  Serial.print(F("_speed in microseconds:  "));
+  Serial.print(temp_speed);
+  Serial.println(" uS");
+    
+  return temp_speed;
+}
+
+unsigned long int calculate_travel_mm(long int ftravel_mm){
+  
+  // all variables here should be local
+  Serial.print("Steps per Revolution: ");
+  Serial.println(motor_steps_per_revolution);
+  Serial.print("Microstepping: ");
+  Serial.println(motor_microstepping);
+  Serial.print("Leadscrew Pitch: ");
+  Serial.println(leadscrew_pitch);
+
+  movement_steps = ftravel_mm * ((motor_steps_per_revolution * motor_microstepping) / leadscrew_pitch);
+
+  Serial.print("Travel Steps: ");
+  Serial.println(movement_steps);
+  
+  return movement_steps;
+}
+
 void rotate_motor(int pin_ena, int pin_pul, unsigned long int motor_steps, long int speed){
   Serial.println("START");
   Serial.print("Rotating: ");
@@ -48,20 +169,12 @@ void rotate_motor(int pin_ena, int pin_pul, unsigned long int motor_steps, long 
   Serial.println("STOP");
 }
 
-bool change_direction(int pin_ena, int pin_dir, bool direction){
 
-  delayMicroseconds(500);
-    digitalWrite(pin_ena,HIGH);
-  delayMicroseconds(100);
-    digitalWrite(pin_dir,direction);
-  delayMicroseconds(500);
-    digitalWrite(pin_ena,LOW);
-  delayMicroseconds(100);
-    Serial.print("Read Dir: ");
-    Serial.println(digitalRead(pin_dir));
-  
-  return digitalRead(pin_dir);
-}
+
+
+
+
+
 
 bool read_direction(int pin_dir){
   
@@ -79,63 +192,6 @@ bool read_direction(int pin_dir){
   return digitalRead(pin_dir);
 }
 
-long int calculate_speed(long int speed){
-  
-  float steps_per_second = 0;         // truncating a float to int -> error chance here
-  float temp_speed = 0;
-  
-  Serial.print("FUNCTION: Calculate_speed: ");
-  Serial.print(speed);
-  Serial.println(" RPM");
-
-  steps_per_second = (speed * steps_per_revolution) / minutes;
-  
-  Serial.print("FUNCTION: steps_per_second: ");
-  Serial.println(steps_per_second);
-
-  temp_speed = (1 / steps_per_second);
-
-  Serial.print("FUNCTION: temp_speed: ");
-  Serial.println(temp_speed);
-  
-  temp_speed = temp_speed / 2;        // to find Ton and Toff
-  
-  Serial.print("FUNCTION: temp_speed/2: ");
-  Serial.println(temp_speed);
-
-  temp_speed = temp_speed / 0.000001; // to convert to microseconds (input to delayMicroseconds() function)
-
-  Serial.print("FUNCTION: temp_speed/0,000001: ");
-  Serial.println(temp_speed);
-
-  temp_speed = (int) temp_speed;
-  Serial.print("FUNCTION: (int)temp_speed: ");
-  Serial.println(temp_speed);
-
-  Serial.print("FUNCTION: _speed in microseconds:  ");
-  Serial.print(temp_speed);
-  Serial.println(" uS");
-    
-  return temp_speed;
-}
-
-
-unsigned long int calculate_travel_mm(long int ftravel_mm){
-  
-  Serial.print("Steps per Revolution: ");
-  Serial.println(steps_per_revolution);
-  Serial.print("Microstepping: ");
-  Serial.println(microstepping);
-  Serial.print("Leadscrew Pitch: ");
-  Serial.println(leadscrew_pitch);
-
-  travel_steps = ftravel_mm * ((steps_per_revolution * microstepping) / leadscrew_pitch);
-
-  Serial.print("Travel Steps: ");
-  Serial.println(travel_steps);
-  
-  return travel_steps;
-}
 
 void go_to_position(int pin_ena, int pin_dir, int target_position){
   
@@ -165,40 +221,6 @@ void go_to_position(int pin_ena, int pin_dir, int target_position){
     }
 }
 
-void run_laps(int pin_ena, int pin_dir){
-//  long int total_laps = 0;
-//  total_laps = laps * steps_per_revolution * microstepping;
-//  moved to the main cycle and changed run_sequence to include the laps
-  Serial.print("Total Laps Steps: ");         // to be tested.
-  Serial.println(total_laps);
-
-  Serial.print("Laps: ");                   // to be tested.
-  Serial.println(laps);
-
-  Serial.print("Steps/rev: ");              // to be tested.
-  Serial.println(steps_per_revolution);
-
-  //Serial.print("MicroStepping: ");          // to be tested.
-  //Serial.println(microstepping);
-
-  // change direction
-  change_direction(pin_ena, pin_dir, LEFT);
-
-  // rotate motor
-  //rotate_motor(total_laps);              // variables must be long otherwise we cannot do the same number of steps as others
-
-
-  delay(1000);
-
-  // change direction
-  change_direction(pin_ena, pin_dir, RIGHT);
-
-  // rotate motor
-  //rotate_motor(total_laps);
-
-  Serial.print(laps);
-  Serial.println(" - Laps completed.");
-}
 
 void run_sequence(int pin_ena, int pin_dir, int pin_pul, int cycles, int positions){
   int j = 0;

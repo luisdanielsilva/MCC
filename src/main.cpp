@@ -5,41 +5,23 @@
 #include "motor.h"
 #include "serial.h"
 
+
 String mcc_version = "Version: 0.1";
 String mcc_date = "Date: 08/12/2020";
 String mcc_coder = "Author: Luís Silva @ luisdanielsilva@gmail.com";
 
 SimpleCLI cli;
 
+// Commands available
 Command ping;
 Command help;
 Command info;
+Command print;
 Command setpins;
-Command setspeed;
-
- // #define INFO 
-// NANO Configuration
- int PUL=4; //define Pulse pin
- int DIR=3; //define Direction pin
- int ENA=2; //define Enable Pin
-
-// MEGA 2560 Configuration
-// int PUL=9;                   //define Pulse pin
-// int DIR=8;                   //define Direction pin
-// int ENA=10;                   //define Enable Pin
-
-long int input_value = 0;
-long int _speed = 0;
-long int temp_speed_rpm = 0;
-long int speed_rpm = 0;
-long int steps = 0;
-int cycles = 0;
-int positions = 0;
-int destiny_position = 0;
-long int rpm = 0;
-long int travel_mm = 0;
-bool option_mm_steps = 0; 
-
+Command setmotor;
+Command setmovement;
+Command setauto;
+Command start;
 
 // ***********************************************    CALLBACK FUNCTIONS    ***********************************************
 void pingCallback(cmd* c) {
@@ -64,20 +46,63 @@ void pingCallback(cmd* c) {
 void helpCallback(cmd* c) {
     Command cmd(c); // Create wrapper object
 
-    Serial.println("Available commands are: ");
-    Serial.println("help - this command");
-    Serial.println("info - information");
-    Serial.println("ping - ping command");
-    Serial.println("setpins - set motor interface");
+    Serial.println(F("Available commands are: "));
+    Serial.println(F("help        - this command"));
+    Serial.println(F("info        - information"));
+    Serial.println(F("print       - print command"));
+    Serial.println(F("1. setpins  - set motor interface"));
+    Serial.println(F("2. setmotor - set motor parameters"));
+    Serial.println(F("3. setmov   - set movement parameters"));
+    Serial.println(F("4. setauto  - set movement parameters"));
+    Serial.println(F("5. start    - start motor"));
+
 }
 
 void infoCallback(cmd* c) {
     Command cmd(c); // Create wrapper object
 
-    Serial.println("Information:");
+    Serial.println(F("Information:"));
     Serial.println(mcc_version);
     Serial.println(mcc_date);
     Serial.println(mcc_coder);
+}
+
+void printCallback(cmd* c) {
+    Command cmd(c); // Create wrapper object
+
+    Serial.println(F(" - - - - - - - "));
+    Serial.print(F("ENABLE PIN: "));
+    Serial.println(ENA);
+    Serial.print(F("PULSE PIN: "));
+    Serial.println(PUL);
+    Serial.print(F("DIR PIN: "));
+    Serial.println(DIR);
+    Serial.println(F(" - - - - - - - "));
+    Serial.print(F("Speed: "));
+    Serial.println(motor_speed_rpm);
+    Serial.print(F("Steps per Revolution: "));
+    Serial.println(motor_steps_per_revolution);
+    Serial.print(F("Microstepping: "));
+    Serial.println(motor_microstepping);
+    Serial.print(F("Direction: "));
+    Serial.println(motor_direction);
+    Serial.println(F(" - - - - - - - "));
+    Serial.print(F("Steps: "));
+    Serial.println(movement_steps);
+    Serial.print(F("Laps: "));
+    Serial.println(movement_laps);
+    Serial.print(F("Milimeters: "));
+    Serial.println(movement_mm);
+    Serial.print(F("Type: "));
+    Serial.println(movement_type);
+    Serial.println(F(" - - - - - - - "));
+    Serial.print(F("Cycles: "));
+    Serial.println(auto_cycles);
+    Serial.print(F("Positions: "));
+    Serial.println(auto_positions);
+    Serial.print(F("Type: "));
+    Serial.println(auto_type);
+    Serial.println(F(" - - - - - - - "));  
 }
 
 void setpinsCallback(cmd* c) {
@@ -96,6 +121,7 @@ void setpinsCallback(cmd* c) {
     
     // Validate pin range (between 1 and 50) or depends on platform
 
+    // DEBUG
     Serial.println("ENA - DIR - PUL ");
     Serial.print(" ");
     Serial.print(ENA);
@@ -103,23 +129,208 @@ void setpinsCallback(cmd* c) {
     Serial.print(DIR);
     Serial.print("  -  ");
     Serial.println(PUL);
+
+    // EXECUTE
+    pinMode(ENA, OUTPUT);
+    pinMode(DIR, OUTPUT);
+    pinMode(PUL, OUTPUT);
 }
 
-void setspeedCallback(cmd* c) {
+void setmotorCallback(cmd* c) {
     Command cmd(c); // Create wrapper object
 
      // Get arguments
     Argument speedArg = cmd.getArgument(0);
+    Argument sprArg = cmd.getArgument(1);
+    Argument usArg = cmd.getArgument(2);
+    Argument dirArg = cmd.getArgument(3);
     
-    // Get values
-    long int speedrpm = speedArg.getValue().toInt();
-    
+    // Get values and pass them to the actual motor variables
+    motor_speed_rpm = speedArg.getValue().toInt();
+    motor_steps_per_revolution = sprArg.getValue().toInt();
+    motor_microstepping = usArg.getValue().toInt();
+    motor_direction = dirArg.getValue().toInt();              // this is a bool value and not int, some error can occur here
+
     // Validate pin range (between 1 and 50) or depends on platform
-    Serial.println("Speed: ");
-    Serial.print(speedrpm);
-    Serial.println(" rpm");
+
+    // DEBUG
+    Serial.print(F("Speed: "));
+    Serial.print(motor_speed_rpm);
+    Serial.println(F(" rpm"));
+
+    Serial.print(F("SPR: "));
+    Serial.print(motor_steps_per_revolution);
+    Serial.println(F(" steps per revolution"));
+
+    Serial.print(F("MicroStepping: "));
+    Serial.println(motor_microstepping);
+    
+    Serial.print(F("DIR: "));
+    Serial.println(motor_direction);
+
+    // EXECUTE
+    change_direction(ENA, DIR, motor_direction);
 }
 
+void setmovementCallback(cmd* c) {
+    Command cmd(c); // Create wrapper object
+
+     // Get arguments
+    Argument stepsArg = cmd.getArgument(0);
+    Argument lapsArg = cmd.getArgument(1);
+    Argument mmArg = cmd.getArgument(2);
+    Argument typeArg = cmd.getArgument(3);
+    
+    
+    // Get values and pass them to the actual motor variables
+    movement_steps = stepsArg.getValue().toInt();
+    movement_laps = lapsArg.getValue().toInt();
+    movement_mm = mmArg.getValue().toInt();
+    movement_type = typeArg.getValue().toInt();
+    
+
+    // Validate value range (between 1 and 50) or depends on platform
+
+    // DEBUG
+    Serial.print(F("Steps: "));
+    Serial.print(movement_steps);
+    Serial.println(" stps");
+
+    Serial.print(F("LAPS: "));
+    Serial.print(movement_laps);
+    Serial.println(" laps");
+
+    Serial.print(F("Milimeters: "));
+    Serial.print(movement_mm);
+    Serial.println(" mm");
+
+    Serial.print(F("TYPE: "));
+    Serial.println(movement_type);
+
+}
+
+void setautoCallback(cmd* c) {
+    Command cmd(c); // Create wrapper object
+
+     // Get arguments
+    Argument cyclesArg = cmd.getArgument(0);
+    Argument positionsArg = cmd.getArgument(1);
+    Argument typemovArg = cmd.getArgument(2);
+    
+    
+    // Get values and pass them to the actual motor variables
+    auto_cycles = cyclesArg.getValue().toInt();
+    auto_positions = positionsArg.getValue().toInt();
+    auto_type = typemovArg.getValue().toInt();
+    
+    // Validate value range (between 1 and 50) or depends on platform
+
+    // DEBUG
+    Serial.print("CYCLES: ");
+    Serial.println(auto_cycles);
+
+    Serial.print("POSITIONS: ");
+    Serial.println(auto_positions);
+    
+    Serial.print("TYPE OF MOVEMENT: ");
+    Serial.println(auto_type);
+}
+
+void setstartCallback(cmd* c) {
+    Command cmd(c); // Create wrapper object
+
+    String argument;
+     // Get arguments
+    Argument typeArg = cmd.getArgument(0);
+    
+    //movement_type = typeArg.getValue().toInt();
+    argument = typeArg.getValue();
+
+  if ((strcmp(argument.c_str(), "A") == 0) || (strcmp(argument.c_str(), "a") == 0))  // Doing it with a C Library function
+  {
+    Serial.println(F("AUTOMATIC OPTION WORKS"));
+
+    motor_speed_temp = calculate_speed(motor_speed_rpm);            // consider moving this and the line below to before these two if's
+
+    change_direction(ENA, DIR, motor_direction);
+
+    switch(auto_type)
+    {
+      case 0:
+          // Steps direct to rotate function and rotate
+          //motor_speed_temp = calculate_speed(motor_speed_rpm);
+          //rotate_motor(ENA, PUL, movement_steps, motor_speed_temp);         // only rotates previously configured STEPS
+          movement_steps_temp = movement_steps;
+      break;
+      case 1:
+          // Convert  laps to steps and rotate
+          Serial.println(F("convert laps to steps"));                          // converts laps to steps and rotates that amount
+          movement_steps_temp = calculate_travel_laps(movement_laps);
+          //motor_speed_temp = calculate_speed(motor_speed_rpm);
+          //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);
+      break;
+      case 2:
+          // Convert  mm to steps and rotate                              
+          Serial.println(F("convert mm to steps"));                            // converts mm to steps and rotates that amount
+          movement_steps_temp = calculate_travel_mm(movement_mm);
+          //motor_speed_temp = calculate_speed(motor_speed_rpm);
+          //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);
+      break;
+      default:
+          Serial.println(F("Could not calculate steps!"));
+          // default statement
+    }
+    
+    //run_sequence();
+    //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);          // one single instance instead of the top ones
+
+    
+  }
+  if ((argument.compareTo("M") == 0) || (argument.compareTo("m") == 0))  // Doing it with a String method
+  {
+    Serial.println(F("MOVEMENT OPTION WORKS"));
+    
+
+    motor_speed_temp = calculate_speed(motor_speed_rpm);
+
+    change_direction(ENA, DIR, motor_direction);
+
+    switch(movement_type)
+    {
+      case 0:
+          // Steps direct to rotate function and rotate
+          //motor_speed_temp = calculate_speed(motor_speed_rpm);
+          //rotate_motor(ENA, PUL, movement_steps, motor_speed_temp);         // only rotates previously configured STEPS
+          movement_steps_temp = movement_steps;
+      break;
+      case 1:
+          // Convert  laps to steps and rotate
+          Serial.println(F("convert laps to steps"));                          // converts laps to steps and rotates that amount
+          movement_steps_temp = calculate_travel_laps(movement_laps);
+          //motor_speed_temp = calculate_speed(motor_speed_rpm);
+          //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);
+      break;
+      case 2:
+          // Convert  mm to steps and rotate                              
+          Serial.println(F("convert mm to steps"));                            // converts mm to steps and rotates that amount
+          movement_steps_temp = calculate_travel_mm(movement_mm);
+          //motor_speed_temp = calculate_speed(motor_speed_rpm);
+          //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);
+      break;
+      default:
+          Serial.println(F("Could not calculate steps!"));
+          // default statement
+    }
+    
+    rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);          // one single instance instead of the top ones
+
+  }
+            
+    // Validate value range (between 1 and 50) or depends on platform
+
+    // DEBUG
+ 
+}
 
 // ***********************************************    SETUP COMMANDS    ***********************************************
 void setupCommandPing(){
@@ -137,10 +348,14 @@ void setupCommandHelp(){
   help = cli.addCommand("help", helpCallback);
 }
 
-
 void setupCommandInfo(){
   // Command INFO
   info = cli.addCommand("info", infoCallback);
+}
+
+void setupCommandPrint(){
+  // Command PRINT
+  print = cli.addCommand("print", printCallback);
 }
 
 void setupCommandSetPins(){
@@ -152,11 +367,49 @@ void setupCommandSetPins(){
   setpins.addArgument("PUL");
 }
 
-void setupCommandSetSpeed(){
+void setupCommandSetMotor(){
   // Command Setpins
-  setspeed = cli.addSingleArgumentCommand("setspeed", setspeedCallback);
+  setmotor = cli.addCommand("setmotor", setmotorCallback);
   
-  //setspeed.addArgument("speed");
+  //int i = 200;
+  //char str[10];
+  //sprintf(str, "%d", i);
+  //Serial.println(str);
+  //const char *cinput = "230";         // Works
+  //const char *cinput = str;           // does not work
+  //Serial.println(cinput);
+
+  setmotor.addArgument("RPM","0");         // DEFAULT: 0        -> later change these default values to come from the motor configuration structure/variables
+  setmotor.addArgument("SPR", "200");      // DEFAULT: 200
+  setmotor.addArgument("US","1");          // DEFAULT: 1
+  setmotor.addArgument("DIR","1");         // DEFAULT: ESQ
+
+
+
+}
+
+void setupCommandSetMovement(){
+  // Command SetMovement
+  setmovement = cli.addCommand("setmov", setmovementCallback);
+  
+  setmovement.addArgument("STEPS");    // -> later change these default values to come from the motor configuration structure/variables
+  setmovement.addArgument("LAPS");    
+  setmovement.addArgument("MM");       
+  setmovement.addArgument("TM");       
+}
+
+void setupCommandSetAuto(){
+  // Command SetAuto
+  setauto = cli.addCommand("setauto", setautoCallback);
+  
+  setauto.addArgument("CYC");    // -> later change these default values to come from the motor configuration structure/variables
+  setauto.addArgument("POS");    
+  setauto.addArgument("TM");       
+}
+
+void setupCommandStart(){
+  // Command Start
+  start = cli.addSingleArgumentCommand("start", setstartCallback);
 }
 
 // Callback in case of an error
@@ -177,8 +430,8 @@ void errorCallback(cmd_error* e) {
 void menu_print(){
   Serial.println(F(" ********************** MOTOR CONTROL CENTER ********************** "));
   Serial.println(F("p   --> Display Parameters"));
-  Serial.println(F("ss  --> Set Speed (tON/tOFF)"));
-  Serial.println(F("ssr --> Set Speed (RPM)"));
+  //Serial.println(F("ss  --> Set Speed (tON/tOFF)"));
+  //Serial.println(F("ssr --> Set Speed (RPM)"));
   Serial.println(F("sd  --> Configure direction"));
   //Serial.println(F("sst --> Set Steps"));
   //Serial.println(F("smm --> Set mm"));
@@ -201,51 +454,14 @@ void menu_print(){
   Serial.println(" ");
 }
 
-
-void variable_print(){
-  Serial.print("Speed:         ");
-  Serial.print(_speed); 
-  Serial.println(" us");
-  Serial.print("Speed:         ");
-  Serial.print(temp_speed_rpm); 
-  Serial.println(" RPM");
-  Serial.print("Steps:         ");
-  Serial.println(steps);
-  Serial.print("Steps per Revolution: ");
-  Serial.println(steps_per_revolution);
-  Serial.print("Microstepping: ");
-  Serial.println(microstepping);
-  Serial.print("Positions:     ");
-  Serial.println(positions);
-  Serial.print("Cycles:        ");
-  Serial.println(cycles);
-  Serial.print("Laps:          ");
-  Serial.println(laps);
-  Serial.print("Travel :       ");
-  Serial.print(travel_mm);
-  Serial.println(" mm");
-  if(option_mm_steps == 0)
-  {
-    Serial.print(option_mm_steps);
-    Serial.println(" - STEPS Configured");
-  }
-  if(option_mm_steps == 1)
-  {
-    Serial.print(option_mm_steps);
-    Serial.println(" - mm Configured");
-  }
-  Serial.print("Direction:     ");
-  read_direction(DIR);                    
-}
-
 void setup() {
   
   Serial.begin(115200);
   
   pinMode(LED_BUILTIN, OUTPUT);             // we should blink the LED every 1 second to make sure it's alive. except when a critical function is being performed AKA rotating motor
 
-  Serial.println("Welcome to MCC command line interface.");
-  Serial.println("Type \"help\" to see a list of commands.");
+  Serial.println(F("Welcome to MCC command line interface."));
+  Serial.println(F("Type \"help\" to see a list of commands."));
 
   cli.setOnError(errorCallback);
 
@@ -253,7 +469,13 @@ void setup() {
   setupCommandHelp();
   setupCommandInfo();
   setupCommandSetPins();
-  setupCommandSetSpeed();
+  setupCommandSetMotor();
+  setupCommandSetMovement();
+  setupCommandSetAuto();
+  setupCommandStart();
+  setupCommandPrint();
+
+  setupMotor(ENA);        // review this command to make sure it makes it OFF all the time during the program
 }
 
 void loop()
