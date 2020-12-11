@@ -2,6 +2,8 @@
 ## Motor Control Center
 
 This software is an application of a library freely available online: [SimpleCLI](https://github.com/spacehuhn/SimpleCLI).  
+
+
 **Motor Control Center** is meant to be used with stepper motor drivers that support I/O interface of type ENA, PUL, DIR such as TB6600 and TMC2xxx series and uses Arduino as a platform (can easily be adapted for other platforms).
 
 ## Supported boards
@@ -25,33 +27,33 @@ Any Arduino board with more than 2KB of SRAM.
 ## Usage
 Assuming you have Visual Studio Code installed with PlatformIO, to use the software please follow the steps below.
 
-**Step 1:**
+**Step 1:**  
 Configure pins ENABLE, DIRECTION, PULSE. Numbering should follow Arduino scheme.
 
-*Example:*
+*Example:*  
 ```setpins -ENA 2 -DIR 3 -PUL 4```
 
-**Step 2:**
+**Step 2:**  
 Configure speed, steps per rotation, microstepping and direction.
 This depends on your motor driver and motor. Be careful when settings these values!
 
-*Example:* 
+*Example:*  
 ```setmotor -RPM 100 -SPR 800 -US 4 -DIR 0```
 
-**Step 3:**
+**Step 3:**  
 Configure how much you want you motor to move. Whether it is steps, laps or milimeters (in a leadscrew type of arrangement) and how much pitch the threadscrew has.
 
 *Example:*  
 ```setmov -STEPS 800 -LAPS 2 -MM 50 -P 8 -TM 1```  
 
-**Step 4:**
+**Step 4:**  
 Configure how the automatic movement setting works. Set cycles, positions and type of movement (steps, laps or mm) as defined in **Step 3**.
 The automatic movement will go through the number of positions in the original directions then backward. It will do so a number of times (cycles).
 
 *Example:*  
 ```setauto -CYC 2 -POS 5```
 
-**Step 5:**
+**Step 5:**  
 Configure how much you want you motor to move. Whether it is steps, laps or milimeters (in a leadscrew type of arrangement) and how much pitch the threadscrew has.
 
 *Example:*  
@@ -59,9 +61,10 @@ Configure how much you want you motor to move. Whether it is steps, laps or mili
 ```start m``` or ```start M``   -> for a one time movement
 
 ## Author:
-Luís Silva
-I'm a dad, husband and an electrical engineer working in the automotive industry.  
+My name is Luís Silva, I live in Braga, the north of Portugal. I'm a dad, husband and an electrical engineer working in the automotive industry.  
 On my time away from work I like to do my own electronics projects, with or without software. I only lack the time to do everything I want to do :)  
+
+
 You can e-mail me: luisdanielsilva at gmail.com  
 Personal website: [www.luisdanielsilva.com](https://www.luisdanielsilva.com/)  
 
