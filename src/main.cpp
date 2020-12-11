@@ -17,7 +17,6 @@ String mcc_coder = "Author: Luís Silva @ luisdanielsilva@gmail.com";
 SimpleCLI cli;
 
 // Commands available
-Command ping;
 Command help;
 Command info;
 Command print;
@@ -28,25 +27,6 @@ Command setauto;
 Command start;
 
 // ***********************************************    CALLBACK FUNCTIONS    ***********************************************
-void pingCallback(cmd* c) {
-    Command cmd(c); // Create wrapper object
-
-    // Get arguments
-    Argument numberArg = cmd.getArgument("number");
-    Argument strArg    = cmd.getArgument("str");
-    Argument cArg      = cmd.getArgument("c");
-
-    // Get values
-    int numberValue = numberArg.getValue().toInt();
-    String strValue = strArg.getValue();
-    bool   cValue   = cArg.isSet();
-
-    if (cValue) strValue.toUpperCase();
-
-    // Print response
-    for (int i = 0; i<numberValue; i++) Serial.println(strValue);
-}
-
 void helpCallback(cmd* c) {
     Command cmd(c); // Create wrapper object
 
@@ -105,7 +85,7 @@ void printCallback(cmd* c) {
     Serial.print(F("Positions: "));
     Serial.println(auto_positions);
     Serial.print(F("Type: "));
-    Serial.println(auto_type);
+    Serial.println(movement_type);
     Serial.println(F(" - - - - - - - "));  
 }
 
@@ -182,13 +162,15 @@ void setmovementCallback(cmd* c) {
     Argument stepsArg = cmd.getArgument(0);
     Argument lapsArg = cmd.getArgument(1);
     Argument mmArg = cmd.getArgument(2);
-    Argument typeArg = cmd.getArgument(3);
+    Argument pitchArg = cmd.getArgument(3);
+    Argument typeArg = cmd.getArgument(4);
     
     
     // Get values and pass them to the actual motor variables
     movement_steps = stepsArg.getValue().toInt();
     movement_laps = lapsArg.getValue().toInt();
     movement_mm = mmArg.getValue().toInt();
+    movement_pitch = pitchArg.getValue().toInt();
     movement_type = typeArg.getValue().toInt();
     
 
@@ -207,6 +189,9 @@ void setmovementCallback(cmd* c) {
     Serial.print(movement_mm);
     Serial.println(" mm");
 
+    Serial.print(F("Leadscrew Pitch: "));
+    Serial.println(movement_pitch);
+    
     Serial.print(F("TYPE: "));
     Serial.println(movement_type);
 
@@ -218,13 +203,10 @@ void setautoCallback(cmd* c) {
      // Get arguments
     Argument cyclesArg = cmd.getArgument(0);
     Argument positionsArg = cmd.getArgument(1);
-    Argument typemovArg = cmd.getArgument(2);
-    
     
     // Get values and pass them to the actual motor variables
     auto_cycles = cyclesArg.getValue().toInt();
     auto_positions = positionsArg.getValue().toInt();
-    auto_type = typemovArg.getValue().toInt();
     
     // Validate value range (between 1 and 50) or depends on platform
 
@@ -234,9 +216,6 @@ void setautoCallback(cmd* c) {
 
     Serial.print("POSITIONS: ");
     Serial.println(auto_positions);
-    
-    Serial.print("TYPE OF MOVEMENT: ");
-    Serial.println(auto_type);
 }
 
 void setstartCallback(cmd* c) {
@@ -261,38 +240,30 @@ void setstartCallback(cmd* c) {
 
     change_direction(ENA, DIR, motor_direction);
 
-    switch(auto_type)
+    switch(movement_type)
     {
       case 1:
           // Steps direct to rotate function and rotate
-          //motor_speed_temp = calculate_speed(motor_speed_rpm);
-          //rotate_motor(ENA, PUL, movement_steps, motor_speed_temp);         // only rotates previously configured STEPS
           movement_steps_temp = movement_steps;
           DBG(F("DIRECT STEPS"));
           Serial.println(movement_steps_temp);
       break;
       case 2:
           // Convert  laps to steps and rotate
-          DBG(F("convert laps to steps"));                                    // converts laps to steps and rotates that amount
           movement_steps_temp = calculate_travel_laps(movement_laps);
           DBG(movement_steps_temp);
-          //motor_speed_temp = calculate_speed(motor_speed_rpm);
-          //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);
       break;
       case 3:
           // Convert  mm to steps and rotate                              
-          DBG(F("convert mm to steps"));                                      // converts mm to steps and rotates that amount
-          movement_steps_temp = calculate_travel_mm(movement_mm);
+          movement_steps_temp = calculate_travel_mm(movement_mm, movement_pitch);
           DBG(movement_steps_temp);
-          //motor_speed_temp = calculate_speed(motor_speed_rpm);
-          //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);
       break;
       default:
           Serial.println(F("Could not calculate steps!"));
           // default statement
     }
     
-    run_sequence(ENA, DIR, PUL, auto_cycles, auto_positions, auto_type);
+    run_sequence(ENA, DIR, PUL, auto_cycles, auto_positions, movement_type);
     
   }
   if ((argument.compareTo("M") == 0) || (argument.compareTo("m") == 0))  // Doing it with a String method
@@ -309,26 +280,18 @@ void setstartCallback(cmd* c) {
     {
       case 1:
           // Steps direct to rotate function and rotate
-          //motor_speed_temp = calculate_speed(motor_speed_rpm);
-          //rotate_motor(ENA, PUL, movement_steps, motor_speed_temp);         // only rotates previously configured STEPS
           movement_steps_temp = movement_steps;
           DBG(F("DIRECT STEPS"));
           DBG(movement_steps_temp);
       break;
       case 2:
           // Convert  laps to steps and rotate
-          DBG(F("convert laps to steps"));                          // converts laps to steps and rotates that amount
           movement_steps_temp = calculate_travel_laps(movement_laps);
-          //motor_speed_temp = calculate_speed(motor_speed_rpm);
-          //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);
           DBG(movement_steps_temp); 
       break;
       case 3:
           // Convert  mm to steps and rotate                              
-          DBG(F("convert mm to steps"));                            // converts mm to steps and rotates that amount
-          movement_steps_temp = calculate_travel_mm(movement_mm);
-          //motor_speed_temp = calculate_speed(motor_speed_rpm);
-          //rotate_motor(ENA, PUL, movement_steps_temp, motor_speed_temp);
+          movement_steps_temp = calculate_travel_mm(movement_mm, movement_pitch);
           Serial.println(movement_steps_temp); 
       break;
       default:
@@ -343,14 +306,6 @@ void setstartCallback(cmd* c) {
 }
 
 // ***********************************************    SETUP COMMANDS    ***********************************************
-void setupCommandPing(){
-  // Command PING
-  ping = cli.addCommand("ping", pingCallback);
-  ping.addArgument("number");
-  ping.addPositionalArgument("str", "pong");
-  ping.addFlagArgument("c");
-}
-
 void setupCommandHelp(){
   // Command PING
   help = cli.addCommand("help", helpCallback);
@@ -401,6 +356,7 @@ void setupCommandSetMovement(){
   setmovement.addArgument("STEPS");    // -> later change these default values to come from the motor configuration structure/variables
   setmovement.addArgument("LAPS");    
   setmovement.addArgument("MM");       
+  setmovement.addArgument("P");       
   setmovement.addArgument("TM");       
 }
 
@@ -410,7 +366,6 @@ void setupCommandSetAuto(){
   
   setauto.addArgument("CYC");    // -> later change these default values to come from the motor configuration structure/variables
   setauto.addArgument("POS");    
-  setauto.addArgument("TM");       
 }
 
 void setupCommandStart(){
@@ -443,7 +398,6 @@ void setup() {
 
   cli.setOnError(errorCallback);
 
-  setupCommandPing();
   setupCommandHelp();
   setupCommandInfo();
   setupCommandSetPins();
@@ -452,7 +406,6 @@ void setup() {
   setupCommandSetAuto();
   setupCommandStart();
   setupCommandPrint();
-
 }
 
 void loop()
